@@ -14,7 +14,11 @@ BEGIN {
 	# Maximum distance of notches to edge
 	max_notch = 10;
 	# Translate all groups along X this much
-	glob_trans_x = 0
+	glob_trans_x = 0;
+	# Disable support hook if non-zero
+	no_support = 1;
+	# Do not include neck in model beyond first layer if non-zero (for e.g. 3D-printed neck)
+	no_neck = 1;
 	
 	print "<svg"
 	print "xmlns=\"http://www.w3.org/2000/svg\""
@@ -33,6 +37,8 @@ BEGIN {
 	l=$5
 	# Shallowness of hole
 	ll=$6
+	if( no_neck!=0 )
+		ll = thickness;
 	# Number of layers for hole part
 	layers=ll/thickness
 	# Resonator box inner width
@@ -126,7 +132,7 @@ BEGIN {
 	
 	for( i=0 ; i<2 ; ++i ) {
 		print "<g id=\"" note "_side" i "\" transform=\"translate(" (trans_x-spacing) ",0)\">"
-		if( support_d+support_d2+20 > d+(1+layers)*thickness-notch_d ) {
+		if( no_support==0 && support_d+support_d2+20 > d+(1+layers)*thickness-notch_d ) {
 			print "<rect x=\"" (layers*thickness+d+offset-notch_d) "\" y=\"" (offset-thickness) "\" width=\"" (notch_d+thickness-2*offset) "\" height=\"" (thickness-2*offset) "\" " black_style "/>"
 			print "<rect x=\"" (layers*thickness+d+offset) "\" y=\"" (notch_h+offset) "\" width=\"" (thickness-2*offset) "\" height=\"" (h-2*notch_h-2*offset) "\" " black_style "/>"
 		}
@@ -135,37 +141,51 @@ BEGIN {
 		print "M" (-offset) "," (-offset)
 		print "l" (notch_d+layers*thickness) ",0"
 		print "l0," (-thickness)
-		print "l" (support_d+support_d2-notch_d-layers*thickness) ",0"
-		print "l0," (-support_w+2*offset)
-		print "l" (-support_d) ",0"
-		# Support top left
-		print "l0,-10"
-		print "l" (support_d+10+2*offset) ",0"
-		if( support_d+support_d2+20 > d+(1+layers)*thickness-notch_d ) {
-			outer_d = d+(1+layers)*thickness+10;
-			if( support_d+support_d2+10 > outer_d )
-				outer_d = support_d+support_d2+10;
+		if( no_support!=0 ) {
+			print "l" (d-2*notch_d+2*offset) ",0"
+			print "l0," thickness
+			print "l" (notch_d+thickness) ",0"
 			# Top right
-			print "l" (outer_d-support_d-support_d2-10) "," (support_w)
-			print "l0," (h+thickness+2*offset)
-			print "l-10,10"
-			# Bottom right
-			print "l" (d+(1+layers)*thickness+10-outer_d) ",0"
-		}
-		else {
-			print "l" (d+(layers+1)*thickness-support_d-support_d2-10) ","(support_w)
-			print "l0," (10+2*offset)
-			print "l" (-thickness-notch_d+2*offset) ",0"
-			print "l0," (thickness-2*offset)
-			# Top right
-			print "l" (thickness+notch_d+2*offset) ",0"
-			#print "l" (notch_d+thickness) ",0"
 			print "l0," (notch_h+2*offset)
 			print "l" (-thickness) ",0"
 			print "l0," (h-2*notch_h-2*offset)
 			print "l" (thickness) ",0"
-			# Bottom right
 			print "l0," (notch_h+2*offset)
+			# Bottom right
+		}
+		else {
+			print "l" (support_d+support_d2-notch_d-layers*thickness) ",0"
+			print "l0," (-support_w+2*offset)
+			print "l" (-support_d) ",0"
+			# Support top left
+			print "l0,-10"
+			print "l" (support_d+10+2*offset) ",0"
+			if( support_d+support_d2+20 > d+(1+layers)*thickness-notch_d ) {
+				outer_d = d+(1+layers)*thickness+10;
+				if( support_d+support_d2+10 > outer_d )
+					outer_d = support_d+support_d2+10;
+				# Top right
+				print "l" (outer_d-support_d-support_d2-10) "," (support_w)
+				print "l0," (h+thickness+2*offset)
+				print "l-10,10"
+				# Bottom right
+				print "l" (d+(1+layers)*thickness+10-outer_d) ",0"
+			}
+			else {
+				print "l" (d+(layers+1)*thickness-support_d-support_d2-10) ","(support_w)
+				print "l0," (10+2*offset)
+				print "l" (-thickness-notch_d+2*offset) ",0"
+				print "l0," (thickness-2*offset)
+				# Top right
+				print "l" (thickness+notch_d+2*offset) ",0"
+				#print "l" (notch_d+thickness) ",0"
+				print "l0," (notch_h+2*offset)
+				print "l" (-thickness) ",0"
+				print "l0," (h-2*notch_h-2*offset)
+				print "l" (thickness) ",0"
+				# Bottom right
+				print "l0," (notch_h+2*offset)
+			}
 		}
 		print "l" (-notch_d-thickness) ",0"
 		print "l0," thickness
@@ -208,7 +228,7 @@ BEGIN {
 		print "</g>"
 		
 		outer_d = d+(1+layers)*thickness;
-		if( support_d+support_d2+20 > d+(1+layers)*thickness-notch_d ) {
+		if( support_d+support_d2+20 > d+(1+layers)*thickness-notch_d && no_support==0) {
 			outer_d += 10;
 			if( support_d+support_d2+10 > outer_d )
 				outer_d = support_d+support_d2+10;
